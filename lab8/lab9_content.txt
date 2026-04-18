@@ -1,0 +1,274 @@
+
+--- lab_9.pdf ---
+
+Page 1:
+CS-302| Distributed & Parallel Computing Lab Assignment
+Distributed Bank Backend
+Latency and Inter-Process Communication
+/universityThe Dilemma
+You and a friend are opening aJoint Fixed Depositaccount. The campus bank uses a
+modern distributed backend to process all financial data.
+For security and load balancing, the bank assigns the processing of joint accounts totwo
+independent server branches (Node A and Node B).
+•Node A:Processes Client 1’s portion of the funds.
+•Node B:Processes Client 2’s portion of the funds.
+In real-world market dynamics, the bank applies a daily randomized market fluctuation
+to the interest rate. Furthermore, strict banking regulations require a mandatory "crypto-
+graphic audit" for every single daily transaction. This introduces an intentional processing
+delay, causing the servers to take a noticeable amount of time to finalize the account.
+/codeThe Distributed Calculation
+Write a concurrent program where two computational nodes process compound interest
+independently before sharing their results to find the total.
+The Setup:
+•Client 1 Principal (P 1):Derived from the last 4 digits of your phone number.
+•Client 2 Principal (P 2):Derivedfromthelast4digitsofyourpartner’sphonenumber.
+•Timeframe:N years, processedday-by-day.
+The Flow:
+1.Phase 1 (Calculation & Delay):Each Node computes its portion day-by-day. As
+part of regulatory audit, each day’s calculation must include a brief delay.
+2.Phase 2 (Randomness):Each Node applies a unique, randomized micro-bonus to
+their interest rate based on their assigned phone number seed, guaranteeing unique
+outputs for everyone.
+3.Phase 3 (Communication):The Nodes exchange their finalmaturity valuesusing
+a message-passing technique.
+4.Phase 4 (Consensus):Both Nodes add the two values together. If both Nodes arrive
+at the exact same Final Total, the transaction is successful!
+1
+Page 2:
+CS-302| Distributed & Parallel Computing Lab Assignment
+♂percentageCalculative Model
+Initialization:
+•P 1 = Last 4 digits of Client 1’s phone number. Node A sets Random Seed =P1.
+•P 2 = Last 4 digits of Client 2’s phone number. Node B sets Random Seed =P2.
+The Daily Compounding Process:
+For Nodek∈ {A, B}:
+1. Base rater= 0.07(7.0% annual).
+2. Generate a random market bonusbbetween0.001and0.009(0.1% to 0.9%).
+3. Total daily rate:ratedaily = (r+b)/365.0.
+4. Apply interest:Amount=Amount×(1 +rate daily).
+5.The Audit Delay:Pause the process slightly for the required regulatory check.
+The Synchronization Protocol:
+Action Node A Node B
+Process n days with delays CalculateM at A CalculateM at B
+Inter-Process Communication (IPC)
+Message Passing SendM at A, RecvM at B SendM at B, RecvM at A
+Consensus Check Total=M at A +M at B
+"Credit is a system whereby a person who can not pay
+gets another person who can not pay to guarantee that he can pay."
+— Charles Dickens
+2
+--- Lab_9_Qustions.pdf ---
+
+Page 1:
+LAB 9 Distributed Parallel Computing Lab
+Distributed Banking Applications
+1 Program 1: Distributed Bank Server with Multi-
+threading & Synchronization
+1.1 Objective
+To understand Client-Server communication via sockets, parallel request handling using
+Threads, and handling Shared Memory Critical Sections using Mutex Locks.
+1.2 Problem Statement
+Design a central bank server that holds a shared account balance. Multiple distributed
+ATMs (clients) will connect simultaneously to perform DEPOSIT and WITHDRAW
+operations. Implement concurrency controls to prevent race conditions.
+1.3 Source Code
+1.3.1 Server Script (bank server.py)
+1import socket
+2import t hr e ad in g
+3
+4# Shared state
+5balance = 1000.0
+6# Lock for s y n c h r o n i z a t i o n to prevent race c o n d i t i o n s
+7lock = t hr ea d in g . Lock ()
+8
+9def h a n d l e _ c l i e n t ( client_socket , address ) :
+10global balance
+11print ( f " [ NEW C O N N E C T I O N ] Client { address } co nn ec te d . " )
+12
+13while True :
+14try :
+15message = c l i e n t _ s o c k e t . recv (1024) . decode ( ’ utf -8 ’)
+16if not message :
+17break
+18
+19command = message . split ()
+20action = command [0]. upper ()
+21
+22# Critical Section starts here
+23with lock :
+1
+Page 2:
+24if action == " BALANCE " :
+25response = f " Current Balance :${ balance :.2 f } "
+26elif action == " DEPOSIT " :
+27amount = float ( command [1])
+28balance += amount
+29response = f " De po si te d${ amount :.2 f }. New Balance :
+${ balance :.2 f } "
+30elif action == " WITHDRAW " :
+31amount = float ( command [1])
+32if balance >= amount :
+33balance -= amount
+34response = f " Withdrew${ amount :.2 f }. New
+Balance :${ balance :.2 f } "
+35else :
+36response = " I n s u f f i c i e n t funds ! "
+37else :
+38response = " Invalid command . "
+39# Critical Section ends here
+40
+41c l i e n t _ s o c k e t . send ( response . encode ( ’ utf -8 ’) )
+42except Ex ce pt io n as e :
+43print ( f " [ ERROR ] { e } " )
+44break
+45
+46print ( f " [ D I S C O N N E C T ] Client { address } d i s c o n n e c t e d . " )
+47c l i e n t _ s o c k e t . close ()
+48
+49def s t a r t _ s e r v e r () :
+50server = socket . socket ( socket . AF_INET , socket . S O C K _ S T R E A M )
+51server . bind (( ’ lo ca lh os t ’ , 5555) )
+52server . listen (5)
+53print ( " [ STARTED ] Bank Server is li st en in g on port 5555... " )
+54
+55while True :
+56client_socket , address = server . accept ()
+57thread = th re ad in g . Thread ( target = handle_client , args =(
+client_socket , address ) )
+58thread . start ()
+59print ( f " [ ACTIVE C O N N E C T I O N S ] { th re ad in g . a c t i v e _ c o u n t () - 1} " )
+60
+61if __name__ == " __main__ " :
+62s t a r t _ s e r v e r ()
+1.3.2 Client Script (bank client.py)
+1import socket
+2
+3def s t a r t _ c l i e n t () :
+4client = socket . socket ( socket . AF_INET , socket . S O C K _ S T R E A M )
+5client . connect (( ’ lo ca lh os t ’ , 5555) )
+6print ( " C on n ec te d to Central Bank . " )
+7print ( " Commands : BALANCE | DEPOSIT < amount > | WITHDRAW < amount > |
+EXIT " )
+8
+9while True :
+10command = input ( " Enter command : " )
+11if command . upper () == " EXIT " :
+2
+Page 3:
+12break
+13
+14client . send ( command . encode ( ’ utf -8 ’) )
+15response = client . recv (1024) . decode ( ’ utf -8 ’)
+16print ( f " Bank : { response }\ n " )
+17
+18client . close ()
+19
+20if __name__ == " __main__ " :
+21s t a r t _ c l i e n t ()
+1.4 Solution & Explanation
+How to Execute:
+1. Open a terminal and run the server:python bank server.py
+2. Open multiple new terminals (simulating distributed ATMs) and run the client:
+python bank client.py
+Lab Concept Explanation:
+•Parallelism through Threads:When a client connects, the server spawns a new
+threading.Thread. This allows the server to handle Client 2 without waiting for
+Client 1 to disconnect.
+•The Race Condition (Mutex Lock):If Client A and Client B both try to
+withdraw$500 at the exact same millisecond, both threads might read the balance
+as$1000, approve the transaction, and update the balance to$500, essentially losing
+track of one transaction. Thewith lock:block ensures that onlyone thread at a
+timecan read and modify thebalancevariable.
+Expected Output
+Server Terminal:
+[STARTED] Bank Server is listening on port 5555...
+[NEW CONNECTION] Client (’127.0.0.1’, 63451) connected.
+[ACTIVE CONNECTIONS] 1
+[NEW CONNECTION] Client (’127.0.0.1’, 63456) connected.
+[ACTIVE CONNECTIONS] 2
+Client 1 Terminal:
+Enter command: WITHDRAW 500
+Bank: Withdrew$500.00. New Balance:$500.00
+3
+Page 4:
+2 Program 2: Parallel Branch Aggregation using MPI
+2.1 Objective
+To understand the Single Program Multiple Data (SPMD) architecture and message
+passing using thempi4pylibrary.
+2.2 Problem Statement
+A bank has several regional branches. At the end of the day, each branch processes its
+own local transactions independently. The Central Bank (Master Node) needs to sum up
+the deposits from all branches efficiently using parallel data reduction.
+Prerequisite:Students must install MPI:pip install mpi4py
+2.3 Source Code (mpi banking.py)
+1from mpi4py import MPI
+2import random
+3
+4def main () :
+5# I n i t i a l i z e the MPI c o m m u n i c a t o r
+6comm = MPI . C O M M _ W O R L D
+7rank = comm . Get_rank () # The ID of the current process
+8size = comm . Get_size () # Total number of pr oc es se s
+9
+10if size < 2:
+11print ( " Please run with at least 2 pr oc es se s (1 Master , 1+
+Branches ) . " )
+12return
+13
+14# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+15# PARALLEL P R O C E S S I N G PHASE ( Happens in Branch nodes )
+16# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+17l o c a l _ d a i l y _ d e p o s i t = 0.0
+18
+19if rank != 0:
+20# Simulate local branch p r o c e s s i n g 100 t r a n s a c t i o n s in parallel
+21for _ in range (100) :
+22l o c a l _ d a i l y _ d e p o s i t += random . uniform (10.0 , 500.0)
+23
+24print ( f " [ Branch { rank }] Pr oc es se d t r a n s a c t i o n s . Net deposit :${
+l o c a l _ d a i l y _ d e p o s i t :.2 f } " )
+25
+26# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+27# D I S T R I B U T E D RE DU CT IO N PHASE ( Ga th er in g data to Master )
+28# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+29# MPI . SUM a u t o m a t i c a l l y a g g r e g a t e s data from all ranks to root (
+Rank 0)
+30t o t a l _ n a t i o n a l _ d e p o s i t = comm . reduce ( l o c a l _ d a i l y _ d e p o s i t , op = MPI .
+SUM , root =0)
+31
+32# Master node prints the final a g g r e g a t e d result
+33if rank == 0:
+34print ( " \ n " + " = " *50)
+4
+Page 5:
+35print ( f " [ Central Bank - Master Node 0] " )
+36print ( f " Total National Deposits co ll ec te d from { size - 1}
+branches : " )
+37print ( f " Total :${ t o t a l _ n a t i o n a l _ d e p o s i t :.2 f } " )
+38print ( " = " *50 + " \ n " )
+39
+40if __name__ == " __main__ " :
+41main ()
+2.4 Solution & Explanation
+How to Execute:Run the script using the MPI executor, specifying the number of
+parallel nodes (-n 4):
+mpiexec -n 4 python mpi_banking.py
+Note:mpiruncan also be used depending on your OS / MPI installation.
+Lab Concept Explanation:
+•SPMD Architecture:Unlike Program 1 where the Server and Client had different
+code files, in MPI,all nodes run the exact same script. They know how to behave
+based on theirrank(Node 0 acts as Master, Nodes 1, 2, 3 act as workers).
+•Distributed Reduction (comm.reduce):Instead of Node 0 sequentially asking
+Node 1, then Node 2, then Node 3 for their totals,reduceutilizes network topology
+to sum up the variables across the distributed network in parallel. This is the
+foundation of technologies like MapReduce (Hadoop/Spark).
+Expected Output
+[Branch 1] Processed transactions. Net deposit:$25430.22
+[Branch 2] Processed transactions. Net deposit:$26110.15
+[Branch 3] Processed transactions. Net deposit:$24995.80
+==================================================
+[Central Bank - Master Node 0]
+Total National Deposits collected from 3 branches:
+Total:$76536.17
+==================================================
+5

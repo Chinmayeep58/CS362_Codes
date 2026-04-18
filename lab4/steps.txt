@@ -1,0 +1,3 @@
+open msys mingw64 terminal
+run the command: gcc -fopenmp file.c -o file.exe
+then: ./file.exe
