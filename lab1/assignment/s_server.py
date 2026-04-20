@@ -1,6 +1,13 @@
 import socket
+import json
 
-def multiply(A, B, r1, c1, c2):
+def multiply(A, B):
+    r1 = len(A)
+    c1 = len(A[0])
+    r2 = len(B)
+    c2 = len(B[0])
+    if c1 != r2:
+        raise ValueError("Incompatible dimensions")
     result = [[0 for j in range(c2)] for i in range(r1)]
 
     for i in range(r1):
@@ -18,17 +25,12 @@ print("Server waiting for client...")
 conn, addr = server_socket.accept()
 print("Client connected")
 
-data = conn.recv(4096).decode().split("|")
+data = conn.recv(4096).decode()
+matrices = json.loads(data)
+A = matrices['A']
+B = matrices['B']
 
-r1 = int(data[0])
-c1 = int(data[1])
-A = eval(data[2])
+result = multiply(A, B)
 
-r2 = int(data[3])
-c2 = int(data[4])
-B = eval(data[5])
-
-result = multiply(A, B, r1, c1, c2)
-
-conn.send(str(result).encode())
+conn.send(json.dumps(result).encode())
 conn.close()

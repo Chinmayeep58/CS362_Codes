@@ -1,30 +1,21 @@
 import socket
+import json
 
-r1 = int(input("Enter rows of Matrix A: "))
-c1 = int(input("Enter columns of Matrix A: "))
-
-A = []
-print("Enter Matrix A:")
-for i in range(r1):
-    A.append(list(map(int, input().split())))
-
-r2 = int(input("Enter rows of Matrix B: "))
-c2 = int(input("Enter columns of Matrix B: "))
-
-B = []
-print("Enter Matrix B:")
-for i in range(r2):
-    B.append(list(map(int, input().split())))
+# Test matrices
+A = [[1, 2], [3, 4]]
+B = [[5, 6], [7, 8]]
 
 client_socket = socket.socket()
 client_socket.connect(("localhost", 5000))
 
-data = str(r1) + "|" + str(c1) + "|" + str(A) + "|" + str(r2) + "|" + str(c2) + "|" + str(B)
+data = json.dumps({'A': A, 'B': B})
 client_socket.send(data.encode())
 
-result = client_socket.recv(4096).decode()
+result_data = client_socket.recv(4096).decode()
+result = json.loads(result_data)
 
 print("Result Matrix:")
-print(result)
+for row in result:
+    print(row)
 
 client_socket.close()
