@@ -3,7 +3,7 @@
 using namespace std;
 
 typedef long long ll;
-ll grider(ll seed, ll m, ll a, ll mod, ll n){
+ll grinder(ll seed, ll m, ll a, ll mod, ll n){
     ll r=seed;
     for(int i=0;i<n;i++){
         r=(r*m+a)%mod;
@@ -19,7 +19,7 @@ int main(int argc, char** argv){
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     if(size!=2){
         if(rank==0){
-            count<<"run with 2 process only";
+            cout<<"run with 2 process only";
             MPI_Finalize(); // terminates the mpi environment
             return 0;
         }
@@ -27,7 +27,7 @@ int main(int argc, char** argv){
 
     ll a=1098;
     ll b=1023;
-    const ll n=2000000000LL;
+    const ll n=200000LL;
     ll alpha, beta;
     double start=MPI_Wtime();
     if(rank==0){
